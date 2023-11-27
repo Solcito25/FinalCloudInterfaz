@@ -101,10 +101,12 @@
 
                 videoSnapshots.forEach(videoSnapshot => {
                     const videoData = videoSnapshot.data();
+                    
 
                     // Crea una tarjeta de video
                     const videoCard = document.createElement('div');
                     videoCard.classList.add('video-card');
+                    videoCard.dataset.videoUrl = videoData.url;
 
                     // Agrega la miniatura
                     const thumbnail = document.createElement('img');
@@ -117,6 +119,10 @@
                     title.classList.add('video-title');
                     title.textContent = videoData.name;
                     videoCard.appendChild(title);
+                    
+                    videoCard.addEventListener('click', function() {
+                        window.open(this.dataset.videoUrl, '_blank');
+                    });
 
                     // Agrega la tarjeta a la cuadrícula
                     searchResultsElement.appendChild(videoCard);
