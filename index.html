@@ -1,0 +1,137 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideosByTags</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <h1><i class="fas fa-video"></i>VideosByTags</h1>
+        </div>
+        <div class="nav-right">
+            <button id="uploadButton">
+                <i class="fas fa-upload"></i> Subir Video
+            </button>
+        </div>
+    </nav>
+
+    <h1>VideosByTags  <i class="fas fa-search"></i></h1>
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Buscar por tags...">
+       
+    </div>
+    <div class="video-grid" id="searchResults"></div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js';
+        import { collection, getDoc, doc } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-storage.js';
+
+
+        //Info del proyecto
+        const firebaseConfig = {
+                apiKey: "AIzaSyC5tyv2Ebp8fBQa0aXJ62Cvx028G2eVHl0",
+                authDomain: "finalcloudcomputing-2e7bd.firebaseapp.com",
+                projectId: "finalcloudcomputing-2e7bd",
+                storageBucket: "finalcloudcomputing-2e7bd.appspot.com",
+                messagingSenderId: "109955010053",
+                appId: "1:109955010053:web:35acfb71d6ec6b5d38d66c"
+        };
+  
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore();
+        const storage = getStorage();
+
+        function uploadFile(file) {
+        const storageRef = ref(storage, `data/${file.name}`);
+        const uploadTask = uploadBytes(storageRef, file);
+        }
+
+    // Evento al hacer clic en el botón de carga
+    document.getElementById('uploadButton').addEventListener('click', function () {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';  // Set input type to file
+        fileInput.style.display = 'none';  // Hide the input element
+        document.body.appendChild(fileInput);  // Append input to the document body
+
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+
+            if (file) {
+                uploadFile(file);
+            } else {
+                console.error('No se seleccionó ningún archivo.');
+            }
+        });
+
+        fileInput.click();
+    });
+
+    document.getElementById('searchInput').addEventListener('input', async function () {
+    const searchTerm = this.value.toLowerCase();
+    const searchResultsElement = document.getElementById('searchResults');
+
+    // Limpia los resultados anteriores
+    searchResultsElement.innerHTML = '';
+
+    try {
+        // Realiza la búsqueda en Firestore
+        const docRef = doc(db, 'inverted_index', searchTerm);
+        const docSnapshot = await getDoc(docRef);
+
+        if (docSnapshot.exists()) {
+            const videoData = docSnapshot.data();
+            const videoIds = videoData.document_ids;
+
+            // Ensure videoIds is an array before mapping over it
+            if (Array.isArray(videoIds)) {
+                // Obtén la información de los videos desde la otra colección
+                const videoSnapshots = await Promise.all(videoIds.map(async (videoId) => {
+                    const videoDocRef = doc(db, 'videos', videoId);
+                    const videoSnapshot = await getDoc(videoDocRef);
+                    return videoSnapshot;
+                }));
+
+                videoSnapshots.forEach(videoSnapshot => {
+                    const videoData = videoSnapshot.data();
+
+                    // Crea una tarjeta de video
+                    const videoCard = document.createElement('div');
+                    videoCard.classList.add('video-card');
+
+                    // Agrega la miniatura
+                    const thumbnail = document.createElement('img');
+                    thumbnail.classList.add('video-thumbnail');
+                    thumbnail.src = videoData.thumbnail || 'https://via.placeholder.com/200x150'; // Use actual thumbnail URL if available
+                    videoCard.appendChild(thumbnail);
+
+                    // Agrega el título
+                    const title = document.createElement('div');
+                    title.classList.add('video-title');
+                    title.textContent = videoData.name;
+                    videoCard.appendChild(title);
+
+                    // Agrega la tarjeta a la cuadrícula
+                    searchResultsElement.appendChild(videoCard);
+                });
+            } else {
+                console.log('videoIds is not an array');
+            }
+        } else {
+            console.log('Documento no encontrado');
+        }
+    } catch (error) {
+        console.error('Error al realizar la búsqueda: ', error);
+    }
+});
+</script>
+</body>
+
+</html>
