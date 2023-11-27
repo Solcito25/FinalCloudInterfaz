@@ -109,7 +109,7 @@
                     // Agrega la miniatura
                     const thumbnail = document.createElement('img');
                     thumbnail.classList.add('video-thumbnail');
-                    thumbnail.src = videoData.thumbnail || 'https://via.placeholder.com/200x150'; // Use actual thumbnail URL if available
+                    thumbnail.src = videoData.thumbnails; // 
                     videoCard.appendChild(thumbnail);
 
                     // Agrega el título
